@@ -5,27 +5,43 @@ app = marimo.App(width="medium")
 
 
 @app.cell
-def __(cols_drop, plot_df, px):
+def __(cols_drop, go, mo, plot_df):
+    import plotly.io as pio
+    pio.renderers.default = 'notebook'
 
+    fig = go.Figure()
 
-    fig = px.line(
-        plot_df,                                  # The DataFrame to use
-        x='week_date',                       # Column for the x-axis
-        y=cols_drop.value,                  # Column for the y-axis
-        title=f'{cols_drop.value} over Time',      # The title of the chart
-        markers=True,                        # Show markers for each data point
-        labels={                             # Customize axis labels
-            "week_date": "Date",
-            cols_drop.value: "Value"
-        }
-    )
+    fig.add_trace(go.Scatter(
+        x=plot_df['week_date'],
+        y=plot_df['quantidade'],
+        mode='lines+markers',  # Can be 'lines', 'markers', or both
+        name='Quantidade de vendas'       # This text appears in the legend
+    ))
 
-    # Customize the plot's appearance for a cleaner look
+    # 5. Add the second line (trace)
+    fig.add_trace(go.Scatter(
+        x=plot_df['week_date'],
+        y=plot_df[cols_drop.value],
+        mode='lines+markers',
+        name=cols_drop.value
+    ))
+
+    # 6. Update the layout to add titles and clean up the appearance
     fig.update_layout(
+        title='Product Sales Over Time',
+        xaxis_title='Date',
+        yaxis_title='Value',
         plot_bgcolor='white',
-        font=dict(family="Arial, sans-serif", size=12, color="black")
+        legend_title_text='Product'
     )
-    return fig,
+    #fig.add_trace(go.line(plot_df,x='week_date',y=
+    #                    mode='markers', name='markers'))
+
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
+
+    mo.ui.plotly(fig)
+    return fig, pio
 
 
 @app.cell
@@ -36,9 +52,9 @@ def __(mo, plot_df):
         options=cols, value="gross_profit", label="Variável"
     )
 
-    cols_drop
+    plot_df.sort_values(by="week_date", inplace=True);
 
-    plot_df.sort_values(by="week_date");
+    cols_drop
     return cols, cols_drop
 
 
@@ -57,14 +73,12 @@ def __(filtered_df, mo):
     )
 
     prod_drop
-
     return prod_drop, produto_list
 
 
 @app.cell
 def __(df, pdv_drop):
     filtered_df = df[df.pdv == pdv_drop.value]
-
     return filtered_df,
 
 
@@ -113,7 +127,8 @@ def __():
     import pandas as pd
     import matplotlib.pyplot as plt
     import plotly.express as px
-    return mo, pd, plt, px
+    import plotly.graph_objects as go
+    return go, mo, pd, plt, px
 
 
 if __name__ == "__main__":
